@@ -1,6 +1,8 @@
 package org.loudev;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -23,14 +25,22 @@ public class InvertedIndex {
     private Text fileKey = new Text();
     private Text word = new Text();
 
+    private Pattern pattern = Pattern.compile("www.[a-zA-Z0-9]+.com", Pattern.CASE_INSENSITIVE);
+    private Matcher matcher;
+
     public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
       FileSplit fileSplit = (FileSplit) context.getInputSplit();
       String filename = fileSplit.getPath().getName();
 
       StringTokenizer itr = new StringTokenizer(value.toString(), " '-");
       while (itr.hasMoreTokens()) {
-        word.set(itr.nextToken().replaceAll("[^a-zA-Z]", "").toLowerCase());
         fileKey.set(filename);
+        String cleanWord = itr.nextToken();
+        matcher = pattern.matcher(cleanWord);
+
+        if (!matcher.find()) {
+          word.set(cleanWord.replaceAll("[^a-zA-ZáéíóúÁÉÍÓÚ]", "").toLowerCase());
+        }
         context.write(word, fileKey);
       }
     }
